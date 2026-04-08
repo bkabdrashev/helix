@@ -2054,6 +2054,24 @@ fn debug_start(cx: &mut compositor::Context, args: Args, event: PromptEvent) -> 
     dap_start_impl(cx, name.as_deref(), None, Some(args))
 }
 
+fn debug_start_once(cx: &mut compositor::Context, args: Args, event: PromptEvent) -> anyhow::Result<()> {
+    if event != PromptEvent::Validate {
+        return Ok(());
+    }
+    if cx.editor.debug_adapters.get_active_client().is_some() {
+        cx.editor.set_error("Debugger is already running");
+        return Ok(());
+    }
+
+    let mut args: Vec<_> = args.into_iter().collect();
+    let name = match args.len() {
+        0 => None,
+        _ => Some(args.remove(0)),
+    };
+    dap_start_impl(cx, name.as_deref(), None, Some(args))
+}
+
+
 fn debug_remote(
     cx: &mut compositor::Context,
     args: Args,
@@ -3593,6 +3611,17 @@ pub const TYPABLE_COMMAND_LIST: &[TypableCommand] = &[
         aliases: &["dbg"],
         doc: "Start a debug session from a given template with given parameters.",
         fun: debug_start,
+        completer: CommandCompleter::none(),
+        signature: Signature {
+            positionals: (0, None),
+            ..Signature::DEFAULT
+        },
+    },
+    TypableCommand {
+        name: "debug-start-once",
+        aliases: &[],
+        doc: "Start a debug session from a given template with given parameters once.",
+        fun: debug_start_once,
         completer: CommandCompleter::none(),
         signature: Signature {
             positionals: (0, None),

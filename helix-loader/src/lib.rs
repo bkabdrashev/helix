@@ -149,7 +149,7 @@ pub fn log_file() -> PathBuf {
 }
 
 pub fn workspace_config_file() -> PathBuf {
-    find_workspace().0.join(".helix").join("config.toml")
+    find_workspace().0.join(".helix").join("myconfig.toml")
 }
 
 pub fn workspace_lang_config_file() -> PathBuf {
@@ -283,7 +283,7 @@ pub fn find_workspace_in(dir: impl AsRef<Path>) -> (PathBuf, bool) {
 }
 
 fn default_config_file() -> PathBuf {
-    config_dir().join("config.toml")
+    config_dir().join("myconfig.toml")
 }
 
 fn ensure_parent_dir(path: &Path) {

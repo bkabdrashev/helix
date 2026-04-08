@@ -31,6 +31,14 @@ codegen-units = 1
 strip = true
 opt-level = 3
 
+[profile.mine]
+inherits = "release"
+lto = "thin"
+codegen-units = 1
+incremental = true
+debug = 2
+opt-level = 3
+
 [profile.integration]
 inherits = "test"
 package.helix-core.opt-level = 2

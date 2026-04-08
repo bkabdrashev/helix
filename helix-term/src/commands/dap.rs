@@ -16,6 +16,7 @@ use tui::text::Spans;
 use std::collections::HashMap;
 use std::future::Future;
 use std::path::PathBuf;
+use std::borrow::Cow;
 
 use anyhow::{anyhow, bail};
 
@@ -402,6 +403,42 @@ pub fn dap_toggle_breakpoint(cx: &mut Context) {
     dap_toggle_breakpoint_impl(cx, path, line);
 }
 
+pub fn dap_set_breakpoint(cx: &mut Context) {
+    let (view, doc) = current!(cx.editor);
+    let path = match doc.path() {
+        Some(path) => path.clone(),
+        None => {
+            cx.editor
+                .set_error("Can't set breakpoint: document has no path");
+            return;
+        }
+    };
+    let text = doc.text().slice(..);
+    let line = doc.selection(view.id).primary().cursor_line(text);
+    let breakpoints = cx.editor.breakpoints.entry(path.clone()).or_default();
+    if let Some(_) = breakpoints
+        .iter()
+        .position(|breakpoint| breakpoint.line == line)
+    {
+        // cx.editor.set_status("Breakpoint already set");
+    } else {
+        breakpoints.push(Breakpoint {
+            line,
+            ..Default::default()
+        });
+    }
+
+    let debugger = debugger!(cx.editor);
+
+    if let Err(e) = breakpoints_changed(debugger, path, breakpoints) {
+        cx.editor.set_error(format!("Failed to set breakpoints: {}", e));
+    }
+}
+
+pub fn dap_clear_all_breakpoints(cx: &mut Context) {
+    cx.editor.breakpoints.clear();
+}
+
 pub fn dap_toggle_breakpoint_impl(cx: &mut Context, path: PathBuf, line: usize) {
     // TODO: need to map breakpoints over edits and update them?
     // we shouldn't really allow editing while debug is running though
@@ -568,6 +605,7 @@ pub fn dap_variables(cx: &mut Context) {
             for var in vars {
                 let mut spans = Vec::with_capacity(5);
 
+                spans.push(Span::raw(" "));
                 spans.push(Span::styled(var.name.to_owned(), text_style));
                 if let Some(ty) = var.ty {
                     spans.push(Span::raw(": "));
@@ -583,6 +621,46 @@ pub fn dap_variables(cx: &mut Context) {
     let contents = Text::from(tui::text::Text::from(variables));
     let popup = Popup::new("dap-variables", contents);
     cx.replace_or_push_layer("dap-variables", popup);
+}
+
+pub fn dap_eval_selection(cx: &mut Context) {
+    let (view, doc) = current!(cx.editor);
+    let text = doc.text().slice(..);
+    let selection = doc.selection(view.id).fragments(text).map(Cow::into_owned).collect::<Vec<_>>().join(" ");
+    let debugger = debugger!(cx.editor);
+
+    let (frame, thread_id) = match (debugger.active_frame, debugger.thread_id) {
+        (Some(frame), Some(thread_id)) => (frame, thread_id),
+        _ => {
+            cx.editor.set_error("Cannot find current stack frame to access variables");
+            return;
+        }
+    };
+
+    // TODO: support no frame_id
+
+    let frame_id = debugger.stack_frames[&thread_id][frame].id;
+    let selection_to_eval = selection.clone();
+    let response = helix_lsp::block_on(debugger.eval(selection_to_eval, Some(frame_id)));
+    match response {
+        Err(error) => {
+            cx.editor.set_error(format!("Error: {}", error));
+        },
+        Ok(ok) => {
+            let theme = &cx.editor.theme;
+            let scope_style = theme.get("ui.linenr.selected");
+
+            use tui::text::Span;
+            let mut content = Vec::new();
+            content.push(Spans::from(Span::styled(
+                format!("|{}: {}|", selection, ok.result),
+                scope_style,
+            )));
+            let contents = Text::from(tui::text::Text::from(content));
+            let popup = Popup::new("dap-variables", contents);
+            cx.replace_or_push_layer("dap-variables", popup);
+        }
+    }
 }
 
 pub fn dap_terminate(cx: &mut Context) {
@@ -606,6 +684,7 @@ pub fn dap_terminate(cx: &mut Context) {
     } else {
         cx.editor.debug_adapters.unset_active_client();
     }
+    cx.editor.set_status("Debug session has been terminated");
 }
 
 pub fn dap_enable_exceptions(cx: &mut Context) {
