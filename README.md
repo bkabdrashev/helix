@@ -4,7 +4,6 @@ Fork ideas:
 - [ ] Ff/Tt change behavior
 - [ ] Repeat selection
 - [ ] Fix jumplist polution during debug mode
-- [ ] LSP Rename variable in place
 
 
 <div align="center">
