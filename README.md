@@ -4,6 +4,7 @@ Fork ideas:
 - [ ] Ff/Tt change behavior
 - [ ] Repeat selection
 - [ ] Fix jumplist polution during debug mode
+- [ ] Yank/Paste with multicursor shouldn't use system clipboard
 
 
 <div align="center">
