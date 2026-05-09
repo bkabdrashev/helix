@@ -7,6 +7,8 @@ Fork ideas:
 - [ ] Yank/Paste with multicursor shouldn't use system clipboard
 - [x] insert_line then normal_mode removes indentation which doesn't make sense
 - [ ] Make wrap indicator appear on the previous line too
+- [ ] Rarely broken outside-of-editor copy/paste
+- [ ] Better russian keyboard layout handling
 
 
 <div align="center">
