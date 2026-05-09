@@ -2356,7 +2356,7 @@ impl Editor {
         self.mode = Mode::Normal;
         let (view, doc) = current!(self);
 
-        try_restore_indent(doc, view);
+        // try_restore_indent(doc, view);
 
         // if leaving append mode, move cursor back by 1
         if doc.restore_cursor {

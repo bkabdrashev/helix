@@ -5,6 +5,8 @@ Fork ideas:
 - [ ] Repeat selection
 - [ ] Fix jumplist polution during debug mode
 - [ ] Yank/Paste with multicursor shouldn't use system clipboard
+- [x] insert_line then normal_mode removes indentation which doesn't make sense
+- [ ] Make wrap indicator appear on the previous line too
 
 
 <div align="center">
